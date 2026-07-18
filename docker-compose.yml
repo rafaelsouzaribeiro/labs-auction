@@ -5,6 +5,8 @@ services:
     build:
       dockerfile: Dockerfile
       context: .
+    depends_on:
+      - mongodb
     ports:
       - "8080:8080"
     env_file:
