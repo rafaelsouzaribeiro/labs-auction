@@ -1,4 +1,4 @@
-# Labs Auction - Fechamento Automático de Leilões
+# Labs Auction - Fechamento Automático de Leilões (Mba Exercícios)
 
 ## Antes de começar
 
