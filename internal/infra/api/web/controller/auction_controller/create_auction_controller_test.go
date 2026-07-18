@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rafaelsouzaribeiro/labs-auction/internal/entity/auction_entity"
@@ -69,7 +70,7 @@ func (m *BidRepositoryMock) FindWinningBidByAuctionId(ctx context.Context, aucti
 	return args.Get(0).(*bid_entity.Bid), nil
 }
 
-func setupMockEnvironment(t *testing.T, auctionRepo *AuctionRepositoryMock, bidRepo *BidRepositoryMock) *gin.Engine {
+func setupMockEnvironment(auctionRepo *AuctionRepositoryMock, bidRepo *BidRepositoryMock) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 
 	useCase := auction_usecase.NewAuctionUseCase(auctionRepo, bidRepo)
@@ -90,7 +91,7 @@ func TestCreateAuction_Success_Mock(t *testing.T) {
 		return a.ProductName == "Notebook Dell" && a.Status == auction_entity.Active
 	})).Return(nil)
 
-	router := setupMockEnvironment(t, auctionRepo, bidRepo)
+	router := setupMockEnvironment(auctionRepo, bidRepo)
 
 	body := map[string]interface{}{
 		"product_name": "Notebook Dell",
@@ -108,6 +109,57 @@ func TestCreateAuction_Success_Mock(t *testing.T) {
 	router.ServeHTTP(recorder, req)
 
 	assert.Equal(t, http.StatusCreated, recorder.Code)
+
+	auctionRepo.AssertExpectations(t)
+}
+
+func TestCreateAuction_AutoClosed_Success_Mock(t *testing.T) {
+	auctionRepo := new(AuctionRepositoryMock)
+	bidRepo := new(BidRepositoryMock)
+
+	var createdAuction *auction_entity.Auction
+	closedDone := make(chan struct{})
+
+	auctionRepo.On("CreateAuction", mock.Anything, mock.MatchedBy(func(a *auction_entity.Auction) bool {
+		return a.ProductName == "Notebook Dell" && a.Status == auction_entity.Active
+	})).Run(func(args mock.Arguments) {
+		createdAuction = args.Get(1).(*auction_entity.Auction)
+
+		go func(a *auction_entity.Auction) {
+			time.Sleep(5 * time.Second)
+			a.Status = auction_entity.Closed
+			close(closedDone)
+		}(createdAuction)
+	}).Return(nil)
+
+	router := setupMockEnvironment(auctionRepo, bidRepo)
+
+	body := map[string]interface{}{
+		"product_name": "Notebook Dell",
+		"category":     "Eletrônicos",
+		"description":  "Notebook novo em folha para testes",
+		"condition":    1,
+	}
+	jsonBody, err := json.Marshal(body)
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodPost, "/auction", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	recorder := httptest.NewRecorder()
+
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusCreated, recorder.Code)
+
+	select {
+	case <-closedDone:
+	case <-time.After(6 * time.Second):
+		t.Fatal("timeout esperando goroutine fechar o leilão")
+	}
+
+	require.NotNil(t, createdAuction)
+	assert.Equal(t, auction_entity.Closed, createdAuction.Status)
+
 	auctionRepo.AssertExpectations(t)
 }
 
@@ -115,7 +167,7 @@ func TestCreateAuction_BadRequest_Mock(t *testing.T) {
 	auctionRepo := new(AuctionRepositoryMock)
 	bidRepo := new(BidRepositoryMock)
 
-	router := setupMockEnvironment(t, auctionRepo, bidRepo)
+	router := setupMockEnvironment(auctionRepo, bidRepo)
 
 	body := map[string]interface{}{
 		"product_name": "",
