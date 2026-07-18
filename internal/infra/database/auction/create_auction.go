@@ -68,7 +68,7 @@ func (ar *AuctionRepository) CreateAuction(
 func (ar *AuctionRepository) closeAuctionAfterDuration(auctionId string) {
 	time.Sleep(ar.auctionDuration)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	filter := bson.M{"_id": auctionId, "status": auction_entity.Active}
