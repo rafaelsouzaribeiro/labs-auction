@@ -55,7 +55,6 @@ type AuctionStatus int
 
 const (
 	Active AuctionStatus = iota
-	Completed
 	Closed
 )
 
