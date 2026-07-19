@@ -33,6 +33,65 @@ Para parar o ambiente:
 docker compose down
 ```
 
+## API Routes
+
+### Auctions
+
+#### Create Auction
+**POST** `/auction`
+
+```json
+{
+  "product_name": "Product Name",
+  "category": "Category",
+  "description": "Product description here",
+  "condition": 0
+}
+```
+
+> `condition`: `0` = New, `1` = Used, `2` = Refurbished
+
+---
+
+#### Find Auctions
+**GET** `/auction?status=0&category=Electronics&productName=Phone`
+
+| Query Param   | Type   | Description              |
+|---------------|--------|--------------------------|
+| `status`      | int    | `0` = Active, `1` = Closed |
+| `category`    | string | Filter by category       |
+| `productName` | string | Filter by product name   |
+
+---
+
+#### Find Auction by ID
+**GET** `/auction/:auctionId`
+
+---
+
+#### Find Winning Bid by Auction ID
+**GET** `/auction/:auctionId/winner`
+
+---
+
+### Bids
+
+#### Create Bid
+**POST** `/bid`
+
+```json
+{
+  "user_id": "uuid-do-usuario",
+  "auction_id": "uuid-do-leilao",
+  "amount": 150.00
+}
+```
+
+---
+
+#### Find Bids by Auction ID
+**GET** `/bid/:auctionId`
+
 ## Objetivo
 
 Adicionar uma funcionalidade crítica ao sistema de leilões existente: o fechamento automático.
