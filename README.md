@@ -70,7 +70,7 @@ docker compose down
 ---
 
 #### Find Winning Bid by Auction ID
-**GET** `/auction/:auctionId/winner`
+**GET** `auction/winner/:auctionId`
 
 ---
 
@@ -91,6 +91,9 @@ docker compose down
 
 #### Find Bids by Auction ID
 **GET** `/bid/:auctionId`
+
+#### User
+**GET** `/user/:userId`
 
 ## Objetivo
 
